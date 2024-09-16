@@ -17,7 +17,7 @@
     "sdk",
     "typescript"
   ],
-  "author": "",
+  "author": "Rafał Majewski",
   "license": "ISC",
   "devDependencies": {
     "@types/dotenv": "^8.2.0",
