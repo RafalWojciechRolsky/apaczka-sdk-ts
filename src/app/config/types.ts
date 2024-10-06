@@ -1,6 +1,6 @@
 export interface OrderRequest {
-  service_id: number;
-  address: {
+  service_id?: number;
+  address?: {
     sender: Address;
     receiver: Address;
   };
@@ -12,10 +12,7 @@ export interface OrderRequest {
     delivered?: NotificationOptions;
   };
   shipment_value?: number;
-  cod?: {
-    amount: number;
-    bankaccount: string;
-  };
+  cod?: COD;
   pickup?: {
     type: string;
     date: string;
@@ -43,13 +40,6 @@ export interface Address {
   foreign_address_id?: string;
 }
 
-export interface NotificationOptions {
-  isReceiverEmail?: number;
-  isReceiverSms?: number;
-  isSenderEmail?: number;
-  isSenderSms?: number;
-}
-
 export interface Shipment {
   dimension1: number;
   dimension2: number;
@@ -58,6 +48,18 @@ export interface Shipment {
   is_nstd: number;
   shipment_type_code: string;
   customs_data?: CustomsData[];
+}
+
+interface COD {
+  amount: number;
+  bankaccount: string;
+}
+
+export interface NotificationOptions {
+  isReceiverEmail?: number;
+  isReceiverSms?: number;
+  isSenderEmail?: number;
+  isSenderSms?: number;
 }
 
 export interface CustomsData {
