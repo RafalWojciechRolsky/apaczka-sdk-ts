@@ -13,7 +13,7 @@ apaczka-sdk-ts is designed to work in a Node.js environment. It's built with Typ
 - **Runtime**: Node.js (version 14.x or higher recommended)
 - **Language**: TypeScript (compiled to JavaScript)
 - **Module System**: CommonJS
-- **API Communication**: Uses the native `fetch` API for HTTP requests
+- **API Communication**: Uses the `axios` library for HTTP requests
 - **Dependencies**:
   - `dotenv` for environment variable management
   - TypeScript and related dev dependencies for development and building
