@@ -27,9 +27,13 @@ const main = async () => {
     // await fs.writeFile(filePath, JSON.stringify(serviceStructure, null, 2));
     // console.log(`Struktura serwisów zapisana do pliku: ${filePath}`);
 
-    console.log("4. Wysyłamy zamówienie do wyceny");
-    const orderValuation = await sdk.orderValuation(exampleOrderRequest);
-    console.log("Order valuation response:", orderValuation);
+    // console.log("4. Wysyłamy zamówienie do wyceny");
+    // const orderValuation = await sdk.orderValuation(exampleOrderRequest);
+    // console.dir(orderValuation, { depth: null });
+
+    // console.log("5. Wysyłamy zamówienie do wysyłki");
+    // const orderSend = await sdk.orderSend(exampleOrderRequest);
+    // console.dir(orderSend, { depth: null });
   } catch (error) {
     if ((error as ApiError).status) {
       const apiError = error as ApiError;

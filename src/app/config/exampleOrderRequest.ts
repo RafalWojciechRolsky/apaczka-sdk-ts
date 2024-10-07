@@ -1,7 +1,7 @@
 import { OrderRequest } from "./types";
 
 export const exampleOrderRequest: OrderRequest = {
-  // service_id: 21,
+  service_id: 21,
   address: {
     sender: {
       country_code: "PL",
