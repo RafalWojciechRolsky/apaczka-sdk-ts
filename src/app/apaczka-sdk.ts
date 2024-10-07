@@ -1,4 +1,3 @@
-import { API_URL } from "./config/envs";
 import { ApaczkaSDK, OrderRequest } from "./config/types";
 import { sendRequest } from "./utils/sendRequest";
 
