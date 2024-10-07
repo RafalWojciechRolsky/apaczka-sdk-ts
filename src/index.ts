@@ -1,9 +1,7 @@
 import createApaczkaSDK from "./app/apaczka-sdk";
 import { APP_ID, APP_SECRET } from "./app/config/envs";
 import { exampleOrderRequest } from "./app/config/exampleOrderRequest";
-// import { OrderRequest, ServiceStructureResponse } from "./app/config/types";
-// import fs from "fs/promises";
-// import path from "path";
+import { ApiError } from "./app/config/types";
 
 if (!APP_ID || !APP_SECRET) {
   throw new Error("APP_ID or APP_SECRET is not set in .env file");
@@ -13,9 +11,9 @@ const sdk = createApaczkaSDK(APP_ID, APP_SECRET);
 
 const main = async () => {
   try {
-    // console.log("1. Sprawdzamy ile i jakie są zamówienia");
-    // const orders = await sdk.orders();
-    // console.dir(orders, { depth: null });
+    console.log("1. Sprawdzamy ile i jakie są zamówienia");
+    const orders = await sdk.orders();
+    console.dir(orders, { depth: null });
 
     // console.log("2. Pobieramy szczegóły konkretnego zamówienia");
     // const orderDetails = await sdk.order("451165840");
@@ -33,8 +31,21 @@ const main = async () => {
     const orderValuation = await sdk.orderValuation(exampleOrderRequest);
     console.log("Order valuation response:", orderValuation);
   } catch (error) {
-    console.error("Error:", error);
+    if ((error as ApiError).status) {
+      const apiError = error as ApiError;
+      console.error(
+        `API Error (Status ${apiError.status}): ${apiError.message}`
+      );
+      if (apiError.data) {
+        console.error("Error details:", apiError.data);
+      }
+    } else {
+      console.error("Unexpected error:", error);
+    }
   }
 };
 
-main();
+main().catch((error) => {
+  console.error("Unhandled error in main function:", error);
+  process.exit(1);
+});

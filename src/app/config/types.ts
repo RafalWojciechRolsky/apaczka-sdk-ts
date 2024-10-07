@@ -206,3 +206,9 @@ export interface ApaczkaSDK {
   customerRegister: (customer: Record<string, unknown>) => Promise<unknown>;
   turnIn: (orderIds: string[]) => Promise<TurnInResponse>;
 }
+
+export interface ApiError {
+  message: string;
+  status: number;
+  data?: any;
+}
