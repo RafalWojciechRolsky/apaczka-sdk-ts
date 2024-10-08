@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         greasyScriptForApaczka
-// @namespace    http://tampermonkey.net/
+// @namespace    https://greasyfork.org/
 // @version      2024-09-09
-// @description  Wysyłka danych do Apczaki, tworzenie listu przewozwego
+// @description  Skrypt wstrzykniety na stronę po stronie uzytkownia za pomocą skryptów greasyfork.org. Wysyłka danych do Apczaki, tworzenie listu przewozwego
 // @author       Rafał
 // @match        https://skladmuzyczny.pl/backend.php/order/edit/id/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=skladmuzyczny.pl

@@ -69,7 +69,7 @@ The following endpoints are available in the Express server:
 
 ## greasy Script
 
-A (Greasy script)[https://greasyfork.org/pl] (and ) is included to facilitate the interaction between the frontend and the backend. This script is designed to be used on the `sote CMS backend` website and provides a form for users to input shipping details directly on the order edit page. Once the form is filled out, the script sends the data to the backend API to create a shipping order.
+A (Greasy script)[https://greasyfork.org/pl] is included to facilitate the interaction between the frontend and the backend. This script is designed to be used on the `sote CMS backend` website and provides a form for users to input shipping details directly on the order edit page. Once the form is filled out, the script sends the data to the backend API to create a shipping order.
 
 - **Script Name**: `greasyScriptForApaczka`
 - **Purpose**: To send shipping data from the frontend (sote CMS backend) to the backend (this app) for order processing.
