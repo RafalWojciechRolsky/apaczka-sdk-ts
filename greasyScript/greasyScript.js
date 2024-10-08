@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         httpPostApaczka
+// @name         greasyScriptForApaczka
 // @namespace    http://tampermonkey.net/
 // @version      2024-09-09
 // @description  Wysyłka danych do Apczaki, tworzenie listu przewozwego

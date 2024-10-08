@@ -60,6 +60,21 @@ The SDK provides the following methods:
 - `customerRegister(customer: Record<string, unknown>)`: Register a new customer
 - `turnIn(orderIds: string[])`: Turn in orders
 
+## API Endpoints
+
+The following endpoints are available in the Express server:
+
+- `POST /api/apaczka/order-valuation`: Get order valuation
+- `POST /api/apaczka/order-send`: Send a new order
+
+## greasy Script
+
+A (Greasy script)[https://greasyfork.org/pl] (and ) is included to facilitate the interaction between the frontend and the backend. This script is designed to be used on the `sote CMS backend` website and provides a form for users to input shipping details directly on the order edit page. Once the form is filled out, the script sends the data to the backend API to create a shipping order.
+
+- **Script Name**: `greasyScriptForApaczka`
+- **Purpose**: To send shipping data from the frontend (sote CMS backend) to the backend (this app) for order processing.
+- **Integration**: The script interacts with the backend by sending a POST request to the `/api/apaczka` endpoint with the shipping details.
+
 ## Development
 
 To set up the project for development:
@@ -67,6 +82,7 @@ To set up the project for development:
 1. Clone the repository
 2. Install dependencies: `pnpm i`
 3. Build the project: `pnpm build`
+4. Run the project: `pnpm start`
 
 ## Contributing
 
