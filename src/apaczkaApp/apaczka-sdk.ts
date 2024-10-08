@@ -1,4 +1,4 @@
-import { ApaczkaSDK, OrderRequest } from "./config/types";
+import { ApaczkaSDK, OrderRequest } from "../config/types";
 import { sendRequest } from "./utils/sendRequest";
 
 const createApaczkaSDK = (appID: string, appSecret: string): ApaczkaSDK => {

@@ -1,7 +1,7 @@
-import createApaczkaSDK from "./app/apaczka-sdk";
-import { APP_ID, APP_SECRET } from "./app/config/envs";
-import { exampleOrderRequest } from "./app/config/exampleOrderRequest";
-import { ApiError } from "./app/config/types";
+import createApaczkaSDK from "./apaczkaApp/apaczka-sdk";
+import { APP_ID, APP_SECRET } from "./config/envs";
+import { exampleOrderRequest } from "./config/exampleOrderRequest";
+import { ApiError } from "./config/types";
 
 if (!APP_ID || !APP_SECRET) {
   throw new Error("APP_ID or APP_SECRET is not set in .env file");
@@ -27,9 +27,9 @@ const main = async () => {
     // await fs.writeFile(filePath, JSON.stringify(serviceStructure, null, 2));
     // console.log(`Struktura serwisów zapisana do pliku: ${filePath}`);
 
-    // console.log("4. Wysyłamy zamówienie do wyceny");
-    // const orderValuation = await sdk.orderValuation(exampleOrderRequest);
-    // console.dir(orderValuation, { depth: null });
+    console.log("4. Wysyłamy zamówienie do wyceny");
+    const orderValuation = await sdk.orderValuation(exampleOrderRequest);
+    console.dir(orderValuation, { depth: null });
 
     // console.log("5. Wysyłamy zamówienie do wysyłki");
     // const orderSend = await sdk.orderSend(exampleOrderRequest);

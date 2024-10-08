@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
-import { API_URL } from "../config/envs";
+import { API_URL } from "../../config/envs";
 import { buildRequest } from "./buildRequest";
-import { ApiError } from "../config/types";
+import { ApiError } from "../../config/types";
 
 export const sendRequest =
   (appID: string, appSecret: string) =>
