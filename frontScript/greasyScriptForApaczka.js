@@ -2,8 +2,8 @@
 // @name         greasyScriptForApaczka
 // @namespace    https://greasyfork.org/
 // @version      2024-09-09
-// @description  Skrypt wstrzykniety na stronę po stronie uzytkownia za pomocą skryptów greasyfork.org. Wysyłka danych do Apczaki, tworzenie listu przewozwego
-// @author       Rafał
+// @description  Injected script on the user’s page via greasyfork.org scripts. Sending data to Apczaka API, creating a shipping label.
+// @author       Rafał Majewski
 // @match        https://skladmuzyczny.pl/backend.php/order/edit/id/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=skladmuzyczny.pl
 // @grant        window.onurlchange
