@@ -1,19 +1,19 @@
 import { OrderRequest } from "./types";
 
 export const exampleOrderRequest: OrderRequest = {
-  service_id: 21,
+  // service_id: 21,
   address: {
     sender: {
       country_code: "PL",
-      name: "Jan Kowalski",
-      line1: "ul. Przykładowa 1",
+      name: "Skladmuzyczny.pl",
+      line1: "ul. Skawińska 14",
       line2: "",
-      postal_code: "00-001",
-      city: "Warszawa",
+      postal_code: "31-066",
+      city: "Kraków",
       is_residential: 0,
-      contact_person: "Jan Kowalski",
-      email: "jan.kowalski@example.com",
-      phone: "+48123456789",
+      contact_person: "Rafał Majewski",
+      email: "zamowienia@skladmuzyczny.pl",
+      phone: "123461842",
     },
     receiver: {
       country_code: "PL",
@@ -25,7 +25,7 @@ export const exampleOrderRequest: OrderRequest = {
       is_residential: 1,
       contact_person: "Anna Nowak",
       email: "anna.nowak@example.com",
-      phone: "+48987654321",
+      phone: "987654321",
     },
   },
   option: {},
