@@ -7,10 +7,38 @@
 // @match        https://skladmuzyczny.pl/backend.php/order/edit/id/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=skladmuzyczny.pl
 // @grant        window.onurlchange
+// @grant        GM.xmlHttpRequest
+// @connect      http://localhost:3000
 // ==/UserScript==
 
 (function () {
   "use strict";
+  // Helper do POST przez Tampermonkey – eliminuje mixed-content (HTTPS→HTTP)
+  function tmPost(path, body) {
+    return new Promise((resolve, reject) => {
+      GM.xmlHttpRequest({
+        method: "POST",
+        url: `http://localhost:3000${path}`,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "token!",
+        },
+        data: JSON.stringify(body),
+        responseType: "json",
+        onload: (resp) => {
+          if (resp.status >= 200 && resp.status < 300) {
+            resolve(resp.response);
+          } else {
+            reject(
+              new Error(`HTTP ${resp.status}: ${resp.statusText || "error"}`)
+            );
+          }
+        },
+        onerror: (err) => reject(err),
+      });
+    });
+  }
+
   const sf_fieldset_dane_dostawy = document.querySelector(
     "#sf_fieldset_dane_dostawy"
   );
@@ -190,11 +218,201 @@
     form.appendChild(createFormField("Telefon", "text", "phone", phone));
   }
 
-  sf_fieldset_dane_dostawy.appendChild(form);
+  /* =======================================================================
+   *  SEKCJA DANYCH DOTYCZĄCYCH NADANIA PACZKI (Apaczka OrderRequest)
+   * =====================================================================*/
 
+  // 1. Domyślna zawartość przesyłki → "Zamówienie XXXX <nazwa najdroższego produktu>"
+  // Pobieramy numer zamówienia z URL (#/id/<orderId>)
+  const orderIdMatch = window.location.pathname.match(/\/id\/(\d+)/);
+  const orderId = orderIdMatch ? orderIdMatch[1] : "";
+
+  // Pobieramy nazwę najdroższego produktu z tabeli #st_order-product-list
+  let mostExpensiveProductName = "produkt";
+  try {
+    const productRows = document.querySelectorAll(
+      "#st_order-product-list tbody tr"
+    );
+    let maxPrice = 0;
+    productRows.forEach((row) => {
+      const priceCell = row.querySelector(
+        "td.text-right.text-nowrap:last-child"
+      );
+      const nameCell = row.querySelector("td.st_record_list-item-name a");
+      if (priceCell && nameCell) {
+        const priceText = priceCell.textContent
+          .replace(/[^0-9,]/g, "")
+          .replace(",", ".");
+        const price = parseFloat(priceText);
+        if (price > maxPrice) {
+          maxPrice = price;
+          mostExpensiveProductName = nameCell.textContent.trim();
+        }
+      }
+    });
+  } catch (_) {}
+
+  const defaultContent = `Zamówienie ${orderId} ${mostExpensiveProductName}`;
+
+  // 2. Pobieramy deklarowaną wartość przesyłki (wartość zamówienia)
+  const declaredValueText =
+    document
+      .querySelector("#order-total-amount-container")
+      ?.textContent.replace(/[^0-9,]/g, "")
+      .replace(",", ".") || "0";
+  const declaredValue = parseFloat(declaredValueText);
+
+  // 3. Pobieramy potencjalną kwotę pobrania (pozostało do zapłaty)
+  const codAmountText =
+    document
+      .querySelector("#order-left-to-pay-amount-container")
+      ?.textContent.replace(/[^0-9,]/g, "")
+      .replace(",", ".") || "0";
+  const codAmount = parseFloat(codAmountText);
+
+  // 4. Tworzymy pola formularza dla danych paczki
+  form.appendChild(
+    createFormField("Długość (cm)", "number", "dimension1", "10")
+  );
+  form.appendChild(
+    createFormField("Szerokość (cm)", "number", "dimension2", "10")
+  );
+  form.appendChild(
+    createFormField("Wysokość (cm)", "number", "dimension3", "10")
+  );
+  form.appendChild(createFormField("Waga (kg)", "number", "weight", "1"));
+
+  // Pole textarea - zawartość
+  const contentDiv = document.createElement("div");
+  contentDiv.style.marginBottom = "15px";
+  const contentLabel = document.createElement("label");
+  contentLabel.textContent = "Zawartość przesyłki:";
+  contentLabel.style.display = "block";
+  const contentTextarea = document.createElement("textarea");
+  contentTextarea.id = "content";
+  contentTextarea.name = "content";
+  contentTextarea.value = defaultContent;
+  contentTextarea.style.width = "100%";
+  contentTextarea.style.height = "60px";
+  contentTextarea.style.border = "1px solid #ced4da";
+  contentTextarea.style.padding = "5px";
+  contentDiv.appendChild(contentLabel);
+  contentDiv.appendChild(contentTextarea);
+  form.appendChild(contentDiv);
+
+  // Deklarowana wartość
+  form.appendChild(
+    createFormField(
+      "Deklarowana wartość (PLN)",
+      "number",
+      "shipment_value",
+      declaredValue.toString()
+    )
+  );
+
+  // Kwota pobrania (opcjonalnie)
+  form.appendChild(
+    createFormField(
+      "Kwota pobrania (PLN) – zostaw 0 jeżeli brak",
+      "number",
+      "cod_amount",
+      codAmount > 0 ? codAmount.toString() : "0"
+    )
+  );
+
+  // Ukryte pole na service_id (wypełnione po wycenie)
+  const serviceIdInput = document.createElement("input");
+  serviceIdInput.type = "hidden";
+  serviceIdInput.id = "service_id";
+  serviceIdInput.name = "service_id";
+  form.appendChild(serviceIdInput);
+
+  // Kontener pod przyciski
+  const buttonsContainer = document.createElement("div");
+  buttonsContainer.style.display = "flex";
+  buttonsContainer.style.gap = "10px";
+  buttonsContainer.style.marginTop = "15px";
+  form.appendChild(buttonsContainer);
+
+  /* ------------------- PRZYCISK 1 – WYCENA ------------------- */
+  const quoteButton = document.createElement("button");
+  quoteButton.textContent = "Wycena";
+  quoteButton.style.padding = "10px 15px";
+  quoteButton.style.backgroundColor = "#6c757d";
+  quoteButton.style.color = "white";
+  quoteButton.style.border = "none";
+  quoteButton.style.cursor = "pointer";
+  quoteButton.disabled = true; // aktywujemy po wypełnieniu pól
+
+  // Funkcja sprawdzająca czy wymagane pola są wypełnione
+  function checkQuoteReady() {
+    const d1 = form.querySelector("#dimension1").value;
+    const d2 = form.querySelector("#dimension2").value;
+    const d3 = form.querySelector("#dimension3").value;
+    const w = form.querySelector("#weight").value;
+    quoteButton.disabled = !(d1 && d2 && d3 && w);
+    quoteButton.style.backgroundColor = quoteButton.disabled
+      ? "#6c757d"
+      : "#17a2b8";
+  }
+  form.addEventListener("input", checkQuoteReady);
+  checkQuoteReady();
+
+  quoteButton.addEventListener("click", function (e) {
+    e.preventDefault();
+    const orderData = buildOrderData();
+    console.log("Wysyłam dane do /api/apaczka/order-valuation", orderData);
+    tmPost("/api/apaczka/order-valuation", orderData).then((valuation) => {
+      // Sprawdzamy, czy odpowiedź zawiera informację o błędzie
+      if (valuation.status === 400 || valuation.status === 500) {
+        console.error("Błąd API:", valuation);
+        alert(`Błąd wyceny: ${valuation.message || "Nieznany błąd"}`);
+        return;
+      }
+
+      // API zwraca obiekt price_table, gdzie kluczami są identyfikatory usług
+      console.log("Otrzymana wycena (cała odpowiedź):", valuation);
+      console.log("Struktura odpowiedzi:", Object.keys(valuation));
+
+      if (valuation.price_table) {
+        console.log(
+          "Dostępne usługi w price_table:",
+          Object.keys(valuation.price_table)
+        );
+      } else {
+        console.log("Brak obiektu price_table w odpowiedzi");
+      }
+
+      // Wyszukujemy czy w price_table są usługi o kodach 42 lub 21
+      let chosen = null;
+      const serviceIds = ["42", "21"]; // Szukamy tych usług
+
+      for (const serviceId of serviceIds) {
+        if (valuation.price_table && valuation.price_table[serviceId]) {
+          chosen = {
+            service_id: parseInt(serviceId),
+            price: valuation.price_table[serviceId].price,
+          };
+          break;
+        }
+      }
+
+      if (chosen) {
+        serviceIdInput.value = chosen.service_id;
+        alert(
+          `Wybrano przewoźnika ${chosen.service_id} – cena ${chosen.price} zł`
+        );
+      } else {
+        console.log("Nie znaleziono usług 42 lub 21 w odpowiedzi");
+        alert("Brak wyceny dla Inpost/DPD");
+      }
+    });
+  });
+  buttonsContainer.appendChild(quoteButton);
+
+  /* ---------------- PRZYCISK 2 – NADANIE PACZKI ---------------- */
   const button = document.createElement("button");
-  button.textContent = "Zarejestruj klienta w apaczka";
-  button.style.marginTop = "15px";
+  button.textContent = "Nadaj paczkę w Apaczka";
   button.style.padding = "10px 15px";
   button.style.backgroundColor = "#007bff";
   button.style.color = "white";
@@ -202,80 +420,128 @@
   button.style.cursor = "pointer";
   button.style.transition = "background-color 0.3s";
 
-  button.addEventListener("mouseover", function () {
-    this.style.backgroundColor = "#0056b3";
-  });
-
-  button.addEventListener("mouseout", function () {
-    this.style.backgroundColor = "#007bff";
-  });
+  // przycisk aktywny po wycenie (gdy ustawiono service_id)
+  function checkSendReady() {
+    button.disabled = serviceIdInput.value === "";
+    button.style.backgroundColor = button.disabled ? "#6c757d" : "#007bff";
+  }
+  checkSendReady();
+  serviceIdInput.addEventListener("change", checkSendReady);
 
   button.addEventListener("click", function (e) {
-    e.preventDefault(); // Zapobiegamy przeładowaniu strony
+    e.preventDefault();
 
-    // Zbieramy dane klienta z formularza bezpośrednio z elementów DOM
-    const form = document.getElementById("apaczkaForm");
-    const customerData = {};
-    
-    // Pobieramy wszystkie inputy z formularza
-    const inputs = form.querySelectorAll("input");
-    
-    // Iterujemy po inputach i zapisujemy niepuste wartości
-    inputs.forEach(input => {
-      if (input.value) {
-        customerData[input.name] = input.value;
+    const orderData = buildOrderData();
+
+    if (!orderData.service_id) {
+      alert("Najpierw wykonaj wycenę i wybierz przewoźnika");
+      return;
+    }
+
+    console.log("Wysyłam dane do /api/apaczka/order-send", orderData);
+
+    tmPost("/api/apaczka/order-send", orderData).then((data) => {
+      console.log("Sukces: Paczka nadana", data);
+      const successMsg = document.createElement("div");
+      successMsg.textContent = "Paczka została pomyślnie nadana!";
+      successMsg.style.color = "green";
+      successMsg.style.marginTop = "10px";
+      successMsg.style.padding = "5px";
+      form.appendChild(successMsg);
+      setTimeout(() => form.removeChild(successMsg), 3000);
+    });
+  });
+
+  buttonsContainer.appendChild(button);
+
+  /* ---------------- POMOCNICZA FUNKCJA BUDUJĄCA OrderRequest ---------------- */
+  function buildOrderData() {
+    const data = {};
+    const inputs = form.querySelectorAll("input, textarea");
+    inputs.forEach((inp) => {
+      if (inp.name && inp.value !== "") {
+        if (inp.type === "checkbox") {
+          data[inp.name] = inp.checked ? 1 : 0;
+        } else {
+          data[inp.name] = inp.value;
+        }
       }
     });
 
-    console.log("Wysyłam dane do API:", JSON.stringify(customerData, null, 2));
-    
-    fetch("http://localhost:3000/api/apaczka/customer-register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "token!",
+    // Konwersje do odpowiednich typów/liczb
+    [
+      "dimension1",
+      "dimension2",
+      "dimension3",
+      "weight",
+      "shipment_value",
+      "cod_amount",
+    ].forEach((k) => {
+      if (data[k]) data[k] = Number(data[k]);
+    });
+
+    // Upewniamy się, że wszystkie wymagane dane są ustawione
+    if (!data.name) data.name = "Skladmuzyczny.pl";
+    if (!data.street) data.street = "ul. Skawińska";
+    if (!data.buildingNumber) data.buildingNumber = "14";
+    if (!data.postalCode) data.postalCode = "31-066";
+    if (!data.city) data.city = "Kraków";
+    if (!data.country) data.country = "PL";
+    if (!data.phone) data.phone = "123461842";
+    if (!data.email) data.email = "zamowienia@skladmuzyczny.pl";
+
+    // Budujemy strukturę zgodną z OrderRequest (uproszczoną)
+    const orderRequest = {
+      service_id: data.service_id ? Number(data.service_id) : undefined,
+      address: {
+        sender: {
+          country_code: "PL",
+          name: "Skladmuzyczny.pl",
+          line1: `${data.street} ${data.buildingNumber}`,
+          line2: data.apartmentNumber || "",
+          postal_code: data.postalCode || "31-066",
+          city: data.city || "Kraków",
+          is_residential: 0,
+          contact_person: "Rafał Majewski",
+          email: "zamowienia@skladmuzyczny.pl",
+          phone: "123461842",
+        },
+        receiver: {
+          country_code: "PL",
+          name: data.name,
+          line1: `${data.street} ${data.buildingNumber}`,
+          line2: data.apartmentNumber || "",
+          postal_code: data.postalCode,
+          city: data.city,
+          is_residential: 1,
+          contact_person: data.contactPerson || data.name,
+          email: data.email,
+          phone: data.phone,
+        },
       },
-      body: JSON.stringify(customerData),
-    })
-      .then((response) => {
-        console.log("Odpowiedź z API (status):", response.status);
-        console.log("Odpowiedź z API (statusText):", response.statusText);
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Sukces: Klient zarejestrowany", data);
-        // Dodaj powiadomienie o sukcesie
-        const successMsg = document.createElement("div");
-        successMsg.textContent = "Klient został pomyślnie zarejestrowany!";
-        successMsg.style.color = "green";
-        successMsg.style.marginTop = "10px";
-        successMsg.style.padding = "5px";
-        form.appendChild(successMsg);
+      option: {},
+      shipment_value: data.shipment_value || 0,
+      pickup: {
+        type: "SELF",
+        date: new Date().toISOString().split("T")[0], // Aktualna data w formacie YYYY-MM-DD
+        hours_from: "09:00",
+        hours_to: "17:00",
+      },
+      shipment: [
+        {
+          dimension1: data.dimension1 || 10,
+          dimension2: data.dimension2 || 10,
+          dimension3: data.dimension3 || 10,
+          shipment_type_code: "PACZKA",
+          weight: data.weight || 1,
+          is_nstd: 0,
+        },
+      ],
+      comment: data.comment || "Komentarz",
+      content: data.content || "Test",
+    };
+    return orderRequest;
+  }
 
-        // Usuń powiadomienie po 3 sekundach
-        setTimeout(() => {
-          form.removeChild(successMsg);
-        }, 3000);
-      })
-      .catch((error) => {
-        console.error("Błąd:", error);
-        // Dodaj powiadomienie o błędzie
-        const errorMsg = document.createElement("div");
-        errorMsg.textContent = "Wystąpił błąd podczas rejestracji klienta.";
-        errorMsg.style.color = "red";
-        errorMsg.style.marginTop = "10px";
-        errorMsg.style.padding = "5px";
-        form.appendChild(errorMsg);
-
-        // Usuń powiadomienie po 3 sekundach
-        setTimeout(() => {
-          form.removeChild(errorMsg);
-        }, 3000);
-      });
-  });
-
-  sf_fieldset_dane_dostawy.appendChild(button);
+  sf_fieldset_dane_dostawy.appendChild(form);
 })();
