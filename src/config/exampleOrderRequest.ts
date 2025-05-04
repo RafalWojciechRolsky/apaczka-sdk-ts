@@ -18,7 +18,7 @@ export const exampleOrderRequest: OrderRequest = {
     receiver: {
       country_code: "PL",
       name: "Anna Nowak",
-      line1: "ul. Testowa 2",
+      line1: "ul. Testowa 2 m 33",
       line2: "",
       postal_code: "00-002",
       city: "Kraków",

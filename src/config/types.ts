@@ -212,3 +212,59 @@ export interface ApiError {
   status: number;
   data?: any;
 }
+
+// Definiowanie typów odpowiedzi API
+export interface ApaczkaService {
+  service_id: string;
+  name: string;
+  delivery_time: string;
+  supplier: string;
+  domestic: string;
+  pickup_courier: string;
+  door_to_door: string;
+  door_to_point: string;
+  point_to_point: string;
+  point_to_door: string;
+}
+
+export interface ApaczkaServiceResponse {
+  services: ApaczkaService[];
+  [key: string]: any;
+}
+
+export interface ApaczkaApiResponse<T> {
+  status: number;
+  message: string;
+  response: T;
+}
+
+export interface ApaczkaOrderData {
+  id: string;
+  service_id: string;
+  service_name: string;
+  waybill_number: string;
+  pickup_number: string;
+  tracking_url: string;
+  status: string;
+  shipments_count: number;
+  content: string;
+  comment: string;
+  receiver: {
+    name: string;
+    contact_person: string;
+    email: string;
+    phone: string;
+    line1: string;
+    line2: string;
+    postal_code: string;
+    city: string;
+    country_code: string;
+    foreign_address_id: string;
+  };
+  created: string;
+  delivered: string | null;
+}
+
+export interface ApaczkaOrderResponse {
+  order: ApaczkaOrderData;
+}

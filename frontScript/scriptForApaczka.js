@@ -213,18 +213,22 @@
   button.addEventListener("click", function (e) {
     e.preventDefault(); // Zapobiegamy przeładowaniu strony
 
-    // Zbieramy dane klienta z formularza
-    const formData = new FormData(document.getElementById("apaczkaForm"));
+    // Zbieramy dane klienta z formularza bezpośrednio z elementów DOM
+    const form = document.getElementById("apaczkaForm");
     const customerData = {};
-
-    // Konwertujemy FormData do obiektu
-    for (let [key, value] of formData.entries()) {
-      if (value) {
-        // dodajemy tylko niepuste pola
-        customerData[key] = value;
+    
+    // Pobieramy wszystkie inputy z formularza
+    const inputs = form.querySelectorAll("input");
+    
+    // Iterujemy po inputach i zapisujemy niepuste wartości
+    inputs.forEach(input => {
+      if (input.value) {
+        customerData[input.name] = input.value;
       }
-    }
+    });
 
+    console.log("Wysyłam dane do API:", JSON.stringify(customerData, null, 2));
+    
     fetch("http://localhost:3000/api/apaczka/customer-register", {
       method: "POST",
       headers: {
@@ -234,6 +238,8 @@
       body: JSON.stringify(customerData),
     })
       .then((response) => {
+        console.log("Odpowiedź z API (status):", response.status);
+        console.log("Odpowiedź z API (statusText):", response.statusText);
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }

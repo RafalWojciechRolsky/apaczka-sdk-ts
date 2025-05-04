@@ -13,7 +13,7 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: "https://your-allowed-origin.com",
+    origin: "*", // Pozwala na zapytania z każdej domeny
     methods: "GET,POST",
   })
 );
@@ -27,8 +27,8 @@ app.use(
 
 app.use(express.json());
 
-app.use("/", helloWorldRoute);
 app.use("/api/apaczka", apiApaczkaRouter);
+app.use("/", helloWorldRoute);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port http://localhost:${PORT}`);
