@@ -2,6 +2,8 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=node
 
 ### Other
+orderPage.html
+package-lock.json
 pnpm-lock.yaml
 dist
 apaczka-php
