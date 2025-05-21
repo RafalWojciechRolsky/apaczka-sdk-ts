@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import createApaczkaSDK from "../../apaczkaApp/apaczka-sdk";
 import { ApiError, OrderRequest } from "../../config/types";
 import { APP_ID, APP_SECRET } from "../../config/envs";
-import { exampleOrderRequest } from "../../config/exampleOrderRequest";
 
 if (!APP_ID || !APP_SECRET) {
   throw new Error("APP_ID or APP_SECRET is not set in .env file");

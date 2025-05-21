@@ -70,6 +70,9 @@
     input.style.flexGrow = "1";
     input.style.border = "1px solid #ced4da";
     input.style.padding = "5px";
+    input.style.boxSizing = "border-box";
+    input.style.minWidth = "0";
+    input.style.width = "100%";
 
     div.appendChild(labelElement);
     div.appendChild(input);
@@ -124,6 +127,25 @@
   const addressElement = document.querySelector(
     "#sf_fieldset_dane_dostawy > div > div .st-order-user-data"
   );
+
+  // Dodajemy stylowany kontener dla całego formularza i elementów Apaczki
+  const apaczkaContainer = document.createElement("div");
+  apaczkaContainer.id = "apaczkaContainer";
+  apaczkaContainer.style.marginTop = "20px";
+  apaczkaContainer.style.padding = "15px";
+  apaczkaContainer.style.borderTop = "1px solid #ccc";
+  apaczkaContainer.style.backgroundColor = "#f9f9f9";
+
+  // Tytuł formularza
+  const formTitle = document.createElement("h3");
+  formTitle.textContent = "Nadaj paczkę przez Apaczkę";
+  formTitle.style.margin = "0 0 15px 0";
+  formTitle.style.color = "#333";
+  formTitle.style.fontSize = "18px";
+  apaczkaContainer.appendChild(formTitle);
+
+  // Formularz wewnątrz kontenera
+  apaczkaContainer.appendChild(form);
 
   // Dodajemy pola z domyślnymi wartościami, ale możliwe do edycji
   const nameField = createFormField(
@@ -282,24 +304,6 @@
   );
   form.appendChild(createFormField("Waga (kg)", "number", "weight", "1"));
 
-  // Pole textarea - zawartość
-  const contentDiv = document.createElement("div");
-  contentDiv.style.marginBottom = "15px";
-  const contentLabel = document.createElement("label");
-  contentLabel.textContent = "Zawartość przesyłki:";
-  contentLabel.style.display = "block";
-  const contentTextarea = document.createElement("textarea");
-  contentTextarea.id = "content";
-  contentTextarea.name = "content";
-  contentTextarea.value = defaultContent;
-  contentTextarea.style.width = "100%";
-  contentTextarea.style.height = "60px";
-  contentTextarea.style.border = "1px solid #ced4da";
-  contentTextarea.style.padding = "5px";
-  contentDiv.appendChild(contentLabel);
-  contentDiv.appendChild(contentTextarea);
-  form.appendChild(contentDiv);
-
   // Deklarowana wartość
   form.appendChild(
     createFormField(
@@ -318,6 +322,10 @@
       "cod_amount",
       codAmount > 0 ? codAmount.toString() : "0"
     )
+  );
+
+  form.appendChild(
+    createFormField("Zawartość przesyłki", "text", "content", defaultContent)
   );
 
   // Ukryte pole na service_id (wypełnione po wycenie)
@@ -362,51 +370,97 @@
     e.preventDefault();
     const orderData = buildOrderData();
     console.log("Wysyłam dane do /api/apaczka/order-valuation", orderData);
-    tmPost("/api/apaczka/order-valuation", orderData).then((valuation) => {
-      // Sprawdzamy, czy odpowiedź zawiera informację o błędzie
-      if (valuation.status === 400 || valuation.status === 500) {
-        console.error("Błąd API:", valuation);
-        alert(`Błąd wyceny: ${valuation.message || "Nieznany błąd"}`);
-        return;
-      }
 
-      // API zwraca obiekt price_table, gdzie kluczami są identyfikatory usług
-      console.log("Otrzymana wycena (cała odpowiedź):", valuation);
-      console.log("Struktura odpowiedzi:", Object.keys(valuation));
+    // Wyświetlenie informacji o ładowaniu
+    const loadingInfo = document.createElement("div");
+    loadingInfo.textContent = "Trwa wycena...";
+    loadingInfo.style.marginTop = "10px";
+    loadingInfo.style.color = "#007bff";
+    form.appendChild(loadingInfo);
 
-      if (valuation.price_table) {
-        console.log(
-          "Dostępne usługi w price_table:",
-          Object.keys(valuation.price_table)
-        );
-      } else {
-        console.log("Brak obiektu price_table w odpowiedzi");
-      }
+    tmPost("/api/apaczka/order-valuation", orderData)
+      .then((response) => {
+        // Usunięcie informacji o ładowaniu
+        form.removeChild(loadingInfo);
 
-      // Wyszukujemy czy w price_table są usługi o kodach 42 lub 21
-      let chosen = null;
-      const serviceIds = ["42", "21"]; // Szukamy tych usług
-
-      for (const serviceId of serviceIds) {
-        if (valuation.price_table && valuation.price_table[serviceId]) {
-          chosen = {
-            service_id: parseInt(serviceId),
-            price: valuation.price_table[serviceId].price,
-          };
-          break;
+        // Sprawdzamy, czy odpowiedź zawiera informację o błędzie
+        if (response.status === 400 || response.status === 500) {
+          console.error("Błąd API:", response);
+          alert(`Błąd wyceny: ${response.message || "Nieznany błąd"}`);
+          return;
         }
-      }
 
-      if (chosen) {
-        serviceIdInput.value = chosen.service_id;
-        alert(
-          `Wybrano przewoźnika ${chosen.service_id} – cena ${chosen.price} zł`
+        // API zwraca obiekt w strukturze: { status, message, response: { price_table } }
+        console.log("Otrzymana wycena (cała odpowiedź):", response);
+
+        if (!response.response || !response.response.price_table) {
+          console.error("Brak tabeli cen w odpowiedzi");
+          alert("Błąd: Nie otrzymano informacji o cenach");
+          return;
+        }
+
+        const priceTable = response.response.price_table;
+        console.log("Dostępne usługi w price_table:", Object.keys(priceTable));
+
+        // Sprawdzamy jakie ID przewoźników są dostępne
+        console.log(
+          "Lista wszystkich dostępnych przewoźników:",
+          Object.keys(priceTable).join(", ")
         );
-      } else {
-        console.log("Nie znaleziono usług 42 lub 21 w odpowiedzi");
-        alert("Brak wyceny dla Inpost/DPD");
-      }
-    });
+
+        // Aktualizacja kafelków z cenami - tylko dla ID 21 i 42
+        document.querySelectorAll(".carrier-tile").forEach((tile) => {
+          const serviceId = tile.dataset.serviceId;
+          if (priceTable[serviceId]) {
+            const priceElement = tile.querySelector(".carrier-price");
+            const priceBrutto = priceTable[serviceId].price_gross;
+            const priceNetto = priceTable[serviceId].price;
+
+            priceElement.innerHTML = `<strong>${(priceBrutto / 100).toFixed(
+              2
+            )} zł</strong><br><small>${(priceNetto / 100).toFixed(
+              2
+            )} zł netto</small>`;
+
+            // Aktywujemy kafelek
+            tile.style.opacity = "1";
+            tile.style.cursor = "pointer";
+          } else {
+            const priceElement = tile.querySelector(".carrier-price");
+            priceElement.textContent = "Niedostępny";
+            tile.style.opacity = "0.5";
+            tile.style.cursor = "not-allowed";
+          }
+        });
+
+        // Nie dodajemy nowych kafelków dla innych przewoźników
+
+        // Jeśli InPost Kurier (ID 42) jest dostępny, sugerujemy go automatycznie
+        // W przeciwnym razie sugerujemy DPD Kurier (ID 21)
+        let suggestedServiceId = null;
+
+        if (priceTable["42"]) {
+          suggestedServiceId = "42";
+        } else if (priceTable["21"]) {
+          suggestedServiceId = "21";
+        }
+
+        if (suggestedServiceId) {
+          const suggestedTile = document.querySelector(
+            `.carrier-tile[data-service-id="${suggestedServiceId}"]`
+          );
+          if (suggestedTile) {
+            // Symulujemy kliknięcie
+            suggestedTile.click();
+          }
+        }
+      })
+      .catch((error) => {
+        // Usunięcie informacji o ładowaniu
+        form.removeChild(loadingInfo);
+        console.error("Błąd podczas wyceny:", error);
+        alert(`Wystąpił błąd: ${error.message}`);
+      });
   });
   buttonsContainer.appendChild(quoteButton);
 
@@ -543,5 +597,103 @@
     return orderRequest;
   }
 
-  sf_fieldset_dane_dostawy.appendChild(form);
+  // Kontener na kafelki przewoźników
+  const carriersContainer = document.createElement("div");
+  carriersContainer.style.marginTop = "20px";
+  carriersContainer.style.marginBottom = "20px";
+
+  const carriersTitle = document.createElement("h4");
+  carriersTitle.textContent = "Dostępni przewoźnicy";
+  carriersTitle.style.margin = "10px 0";
+  carriersTitle.style.color = "#444";
+  carriersTitle.style.fontSize = "16px";
+  carriersContainer.appendChild(carriersTitle);
+
+  const carriersGrid = document.createElement("div");
+  carriersGrid.style.display = "grid";
+  carriersGrid.style.gridTemplateColumns =
+    "repeat(auto-fill, minmax(200px, 1fr))";
+  carriersGrid.style.gap = "15px";
+  carriersGrid.style.marginTop = "10px";
+  carriersContainer.appendChild(carriersGrid);
+
+  // Zdefiniowanie map nazw przewoźników po ID
+  const carrierNames = {
+    21: "DPD Kurier",
+    42: "InPost Kurier",
+  };
+
+  // Zdefiniowanie kolorów dla przewoźników
+  const carrierColors = {
+    21: "#dc0032", // DPD
+    42: "#ffcc00", // InPost
+    default: "#6c757d", // Domyślny kolor
+  };
+
+  // Funkcja tworząca kafelek przewoźnika
+  function createCarrierTile(serviceId, name, price = null) {
+    const carrierTile = document.createElement("div");
+    carrierTile.classList.add("carrier-tile");
+    carrierTile.dataset.serviceId = serviceId;
+    carrierTile.style.border = "1px solid #ddd";
+    carrierTile.style.borderRadius = "5px";
+    carrierTile.style.padding = "15px";
+    carrierTile.style.backgroundColor =
+      carrierColors[serviceId] || carrierColors.default;
+    carrierTile.style.color = "#fff";
+    carrierTile.style.fontWeight = "bold";
+    carrierTile.style.textAlign = "center";
+    carrierTile.style.cursor = "pointer";
+    carrierTile.style.transition = "transform 0.2s, box-shadow 0.2s";
+    carrierTile.style.position = "relative";
+
+    const carrierName = document.createElement("div");
+    carrierName.textContent = name;
+    carrierName.style.marginBottom = "10px";
+    carrierName.style.fontSize = "16px";
+    carrierTile.appendChild(carrierName);
+
+    const priceElement = document.createElement("div");
+    priceElement.classList.add("carrier-price");
+    priceElement.textContent = price
+      ? `${(price / 100).toFixed(2)} zł`
+      : "Cena niedostępna";
+    priceElement.style.fontSize = "14px";
+    carrierTile.appendChild(priceElement);
+
+    // Dodanie zdarzenia kliknięcia
+    carrierTile.addEventListener("click", () => {
+      document.querySelectorAll(".carrier-tile").forEach((tile) => {
+        tile.style.transform = "scale(1)";
+        tile.style.boxShadow = "none";
+        tile.style.opacity = "0.7";
+      });
+
+      // Zaznaczamy wybrany kafelek
+      carrierTile.style.transform = "scale(1.05)";
+      carrierTile.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)";
+      carrierTile.style.opacity = "1";
+
+      // Ustawiamy service_id
+      serviceIdInput.value = serviceId;
+
+      // Sprawdzamy czy przycisk nadania paczki może być aktywowany
+      checkSendReady();
+    });
+
+    return carrierTile;
+  }
+
+  // Tworzenie kafelków dla wybranych przewoźników (domyślnie nieaktywne)
+  const priorityCarriers = ["21", "42"];
+  priorityCarriers.forEach((serviceId) => {
+    const name = carrierNames[serviceId] || `Przewoźnik ${serviceId}`;
+    const tile = createCarrierTile(serviceId, name);
+    tile.style.opacity = "0.7"; // Nieaktywny do czasu wyceny
+    carriersGrid.appendChild(tile);
+  });
+
+  form.appendChild(carriersContainer);
+
+  sf_fieldset_dane_dostawy.appendChild(apaczkaContainer);
 })();
