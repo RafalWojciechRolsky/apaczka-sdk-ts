@@ -51,6 +51,26 @@
   form.style.borderRadius = "8px";
   form.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
 
+  // Tworzymy kontener flex dla dwóch kolumn
+  const formColumnsContainer = document.createElement("div");
+  formColumnsContainer.style.display = "flex";
+  formColumnsContainer.style.flexWrap = "wrap";
+  formColumnsContainer.style.gap = "20px";
+  formColumnsContainer.style.justifyContent = "space-between";
+  form.appendChild(formColumnsContainer);
+
+  // Lewa kolumna
+  const leftColumn = document.createElement("div");
+  leftColumn.style.flex = "1";
+  leftColumn.style.minWidth = "300px";
+  formColumnsContainer.appendChild(leftColumn);
+
+  // Prawa kolumna
+  const rightColumn = document.createElement("div");
+  rightColumn.style.flex = "1";
+  rightColumn.style.minWidth = "300px";
+  formColumnsContainer.appendChild(rightColumn);
+
   function createFormField(label, type, name, value = "") {
     const div = document.createElement("div");
     div.style.marginBottom = "15px";
@@ -96,6 +116,11 @@
     div.appendChild(input);
 
     return div;
+  }
+
+  // Funkcja pomocnicza do dodawania pól do określonej kolumny
+  function addFieldToColumn(column, field) {
+    column.appendChild(field);
   }
 
   // Pobieramy dane klienta do wypełnienia formularza
@@ -177,17 +202,20 @@
   apaczkaContainer.appendChild(apaczkaTitle);
   apaczkaContainer.appendChild(form);
 
-  // Dodajemy pola z domyślnymi wartościami, ale możliwe do edycji
+  // Dodajemy pola z domyślnymi wartościami, ale możliwe do edycji - rozmieszczamy w dwóch kolumnach
   const nameField = createFormField(
     "Nazwa firmy / Imię i nazwisko",
     "text",
     "name",
     customerName
   );
-  form.appendChild(nameField);
-
-  form.appendChild(createFormField("Email", "email", "email", customerEmail));
-  form.appendChild(
+  addFieldToColumn(leftColumn, nameField);
+  addFieldToColumn(
+    leftColumn,
+    createFormField("Email", "email", "email", customerEmail)
+  );
+  addFieldToColumn(
+    leftColumn,
     createFormField("Osoba kontaktowa", "text", "contactPerson", contactPerson)
   );
 
@@ -247,11 +275,17 @@
       }
     }
 
-    form.appendChild(createFormField("Ulica", "text", "street", streetName));
-    form.appendChild(
+    // Dodajemy pola do odpowiednich kolumn, równomiernie rozkładając
+    addFieldToColumn(
+      leftColumn,
+      createFormField("Ulica", "text", "street", streetName)
+    );
+    addFieldToColumn(
+      leftColumn,
       createFormField("Numer budynku", "text", "buildingNumber", buildingNumber)
     );
-    form.appendChild(
+    addFieldToColumn(
+      leftColumn,
       createFormField(
         "Numer lokalu",
         "text",
@@ -259,15 +293,27 @@
         apartmentNumber
       )
     );
-    form.appendChild(
-      createFormField("Województwo", "text", "province", province)
-    );
-    form.appendChild(
+    addFieldToColumn(
+      leftColumn,
       createFormField("Kod pocztowy", "text", "postalCode", postalCode)
     );
-    form.appendChild(createFormField("Miasto", "text", "city", city));
-    form.appendChild(createFormField("Kraj", "text", "country", country));
-    form.appendChild(createFormField("Telefon", "text", "phone", phone));
+
+    addFieldToColumn(
+      rightColumn,
+      createFormField("Miasto", "text", "city", city)
+    );
+    addFieldToColumn(
+      rightColumn,
+      createFormField("Województwo", "text", "province", province)
+    );
+    addFieldToColumn(
+      rightColumn,
+      createFormField("Kraj", "text", "country", country)
+    );
+    addFieldToColumn(
+      rightColumn,
+      createFormField("Telefon", "text", "phone", phone)
+    );
   }
 
   /* =======================================================================
@@ -328,6 +374,7 @@
 
   // 4. Tworzymy pola formularza dla danych paczki
   // Tworzymy pola z ograniczeniami wymiarów i wagi
+  // Pola wymiarów i wagi - dodajemy do prawej kolumny
   const dimension1Field = createFormField(
     "Długość (cm)",
     "number",
@@ -348,7 +395,7 @@
   dimension1Hint.style.marginTop = "2px";
   dimension1Field.appendChild(dimension1Hint);
 
-  form.appendChild(dimension1Field);
+  addFieldToColumn(rightColumn, dimension1Field);
 
   const dimension2Field = createFormField(
     "Szerokość (cm)",
@@ -369,7 +416,7 @@
   dimension2Hint.style.marginTop = "2px";
   dimension2Field.appendChild(dimension2Hint);
 
-  form.appendChild(dimension2Field);
+  addFieldToColumn(rightColumn, dimension2Field);
 
   const dimension3Field = createFormField(
     "Wysokość (cm)",
@@ -390,7 +437,7 @@
   dimension3Hint.style.marginTop = "2px";
   dimension3Field.appendChild(dimension3Hint);
 
-  form.appendChild(dimension3Field);
+  addFieldToColumn(rightColumn, dimension3Field);
 
   const weightField = createFormField("Waga (kg)", "number", "weight", "1");
   const weightInput = weightField.querySelector("input");
@@ -406,10 +453,11 @@
   weightHint.style.marginTop = "2px";
   weightField.appendChild(weightHint);
 
-  form.appendChild(weightField);
+  addFieldToColumn(rightColumn, weightField);
 
-  // Deklarowana wartość
-  form.appendChild(
+  // Deklarowana wartość i pobranie - dodajemy do lewej kolumny pod adresem
+  addFieldToColumn(
+    leftColumn,
     createFormField(
       "Deklarowana wartość (PLN)",
       "number",
@@ -419,7 +467,8 @@
   );
 
   // Kwota pobrania (opcjonalnie)
-  form.appendChild(
+  addFieldToColumn(
+    leftColumn,
     createFormField(
       "Kwota pobrania (PLN) – zostaw 0 jeżeli brak",
       "number",
@@ -428,15 +477,14 @@
     )
   );
 
-  // Dodajemy pole na zawartość przesyłki z limitem 50 znaków
-  form.appendChild(
-    createFormField(
-      "Zawartość przesyłki",
-      "text",
-      "content",
-      defaultContent.substring(0, 50)
-    )
+  // Dodajemy pole na zawartość przesyłki z limitem 50 znaków - dodajemy do prawej kolumny
+  const contentField = createFormField(
+    "Zawartość przesyłki",
+    "text",
+    "content",
+    defaultContent.substring(0, 50)
   );
+  addFieldToColumn(rightColumn, contentField);
 
   // Ustawiamy limit znaków dla pola content
   const contentInput = form.querySelector("input[name='content']");
@@ -456,7 +504,7 @@
     input.addEventListener("input", checkSendReady);
   });
 
-  // Kontener pod przyciski
+  // Kontener pod przyciski - umieszczamy pod polem zawartości
   const buttonsContainer = document.createElement("div");
   buttonsContainer.style.marginTop = "20px";
   buttonsContainer.style.display = "flex";
@@ -1347,7 +1395,22 @@
     carriersGrid.appendChild(tile);
   });
 
+  // Dodajemy kontener przewoźników pod formularzem (poza kolumnami)
   form.appendChild(carriersContainer);
 
-  sf_fieldset_dane_dostawy.appendChild(apaczkaContainer);
+  // Znajdź element sf_fieldset_zawartosc, aby móc umieścić formularz przed nim
+  const sf_fieldset_zawartosc = document.querySelector(
+    "#sf_fieldset_zawartosc"
+  );
+
+  if (sf_fieldset_zawartosc && sf_fieldset_zawartosc.parentNode) {
+    // Wstawiamy formularz przed sekcją zawartości
+    sf_fieldset_zawartosc.parentNode.insertBefore(
+      apaczkaContainer,
+      sf_fieldset_zawartosc
+    );
+  } else {
+    // Jeśli nie znaleziono sekcji zawartości, dodajemy do sekcji dostawy (zachowanie awaryjne)
+    sf_fieldset_dane_dostawy.appendChild(apaczkaContainer);
+  }
 })();

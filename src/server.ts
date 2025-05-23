@@ -30,6 +30,8 @@ app.use(express.json());
 app.use("/api/apaczka", apiApaczkaRouter);
 app.use("/", helloWorldRoute);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port http://localhost:${PORT}`);
+app.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Local: http://localhost:${PORT}`);
+  console.log(`Network: http://<twój-adres-ip>:${PORT}`);
 });
