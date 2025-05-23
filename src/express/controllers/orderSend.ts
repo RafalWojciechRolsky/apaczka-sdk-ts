@@ -13,9 +13,11 @@ export const orderSend = async (req: Request, res: Response) => {
   try {
     const orderRequest: OrderRequest = req.body as OrderRequest;
     const orderResponse = await sdk.orderSend(orderRequest);
+    console.dir(orderResponse, { depth: null });
     res.json(orderResponse);
     return;
   } catch (error) {
+    console.error("Błąd podczas wysyłania zamówienia:", error);
     res.status(500).json({ error: "Failed to send order" });
   }
 };

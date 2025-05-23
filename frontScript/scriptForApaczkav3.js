@@ -71,14 +71,14 @@
     input.name = name;
     input.value = value;
     input.style.flexGrow = "1";
-    input.style.padding = "8px 12px";
     input.style.border = "1px solid #ced4da";
-    input.style.borderRadius = "4px";
-    input.style.transition =
-      "border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out";
-    input.style.fontSize = "14px";
+    input.style.padding = "8px 10px";
     input.style.boxSizing = "border-box";
+    input.style.minWidth = "0";
     input.style.width = "100%";
+    input.style.borderRadius = "4px";
+    input.style.transition = "border-color 0.2s, box-shadow 0.2s";
+    input.style.fontSize = "14px";
 
     // Dodajemy stany hover i focus
     input.addEventListener("focus", () => {
@@ -429,18 +429,29 @@
   );
 
   // Dodajemy pole na zawartość przesyłki z limitem 50 znaków
-  form.appendChild(
-    createFormField(
-      "Zawartość przesyłki",
-      "text",
-      "content",
-      defaultContent.substring(0, 50)
-    )
+  const contentField = createFormField(
+    "Zawartość przesyłki",
+    "text",
+    "content",
+    defaultContent.substring(0, 50)
   );
+  const contentInput = contentField.querySelector("input");
+  contentInput.maxLength = 50; // Ustawiamy maksymalną długość na 50 znaków
 
-  // Ustawiamy limit znaków dla pola content
-  const contentInput = form.querySelector("input[name='content']");
-  contentInput.maxLength = 50;
+  // Aktualizujemy licznik przy wpisywaniu
+  contentInput.addEventListener("input", () => {
+    const length = contentInput.value.length;
+    contentCounter.textContent = `${length}/50 znaków`;
+
+    // Zmieniamy kolor licznika gdy zbliżamy się do limitu
+    if (length > 40) {
+      contentCounter.style.color = length >= 50 ? "#dc3545" : "#ffc107";
+    } else {
+      contentCounter.style.color = "#6c757d";
+    }
+  });
+
+  form.appendChild(contentField);
 
   // Ukryte pole na service_id (wypełnione po wycenie)
   const serviceIdInput = document.createElement("input");
