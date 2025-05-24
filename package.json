@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "tsc": "tsc",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts"
@@ -22,7 +23,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.5.5",
     "ts-node": "^10.9.1",
-    "typescript": "^5.6.2"
+    "typescript": "5.8.3"
   },
   "dependencies": {
     "axios": "^1.7.7",
