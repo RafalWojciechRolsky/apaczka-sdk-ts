@@ -1,97 +1,104 @@
 # apaczka-sdk-ts
 
-TypeScript SDK for Apaczka API
+Aplikacja do integracji sklepu internetowego pracującym na SoteSHOP z serwisem kurierskim Apaczka (przez API)
 
-## Description
+## Opis systemu
 
-apaczka-sdk-ts is a TypeScript library that provides a simple and type-safe way to interact with the Apaczka API. It allows easy integration with Apaczka's shipping services, including order management, waybill generation, pickup scheduling, and more.
+apaczka-sdk-ts to kompletne rozwiązanie integracyjne, składające się z dwóch głównych komponentów:
 
-## Environment
+1. **Serwer Node.js** - backendu napisanego w TypeScript, który komunikuje się z API serwisu Apaczka
+2. **Skrypt dla przeglądarki** - frontend, który można zainstalować poprzez rozszerzenie do przeglądarki np. Tampermonkey/Greasemonkey, osadzany na stronie panelu administracyjnego sklepu
 
-apaczka-sdk-ts is designed to work in a Node.js environment. It's built with TypeScript and targets modern JavaScript environments. Here are some key points about the SDK's environment:
+System umożliwia automatyzację procesu nadawania przesyłek bezpośrednio z panelu administracyjnego sklepu, bez konieczności ręcznego przepisywania danych klientów.
 
-- **Runtime**: Node.js (version 14.x or higher recommended)
-- **Language**: TypeScript (compiled to JavaScript)
-- **Module System**: CommonJS
-- **API Communication**: Uses the `axios` library for HTTP requests
-- **Dependencies**:
-  - `dotenv` for environment variable management
-  - TypeScript and related dev dependencies for development and building
+## Część serwerowa
 
-### Configuration
+Serwer Node.js z Express obsługuje komunikację z API Apaczka, przetwarzając i przekazując dane do serwisu kurierskiego.
 
-The SDK uses environment variables for configuration. It expects the following variables to be set:
+### Środowisko
 
-- `APP_ID`: Your Apaczka application ID
-- `APP_SECRET`: Your Apaczka application secret
-- `API_URL`: The base URL for the Apaczka API (default: https://api.apaczka.com/v1/)
+- **Runtime**: Node.js (rekomendowana wersja 14.x lub wyższa)
+- **Język**: TypeScript (kompilowany do JavaScript)
+- **System modułów**: CommonJS
+- **Komunikacja API**: Wykorzystuje bibliotekę `axios` do zapytań HTTP
+- **Zależności**:
+  - `dotenv` do zarządzania zmiennymi środowiskowymi
+  - `express` do obsługi serwera HTTP
 
-You can set these variables in a `.env` file in your project root, or provide them through your deployment environment.
+### Konfiguracja
 
-### TypeScript Configuration
+SDK wykorzystuje zmienne środowiskowe do konfiguracji. Wymagane są następujące zmienne:
 
-The project uses a `tsconfig.json` file with the following key settings:
+- `APP_ID`: Identyfikator aplikacji Apaczka
+- `APP_SECRET`: Klucz aplikacji Apaczka
+- `API_URL`: Bazowy URL dla API Apaczka (domyślnie: https://api.apaczka.com/v1/)
+- `PORT`: Port, na którym uruchomiony zostanie serwer Express
 
-- Target: ES2018
-- Module: CommonJS
-- Strict mode enabled
-- Source maps generated
+Zmienne te można ustawić w pliku `.env` w katalogu głównym projektu lub dostarczyć przez środowisko wdrożeniowe.
 
-This configuration ensures compatibility with most Node.js environments while providing strong type checking during development.
+### Endpointy API
 
-## API Docs & Client Guidelines:
+Serwer Express udostępnia następujące endpointy:
 
-- [API Docs](https://panel.apaczka.pl/dokumentacja_api_v2.php)
-- [API Client Guidelines](https://www.apaczka.pl/app/uploads/2022/12/Zalecenia-dla-klientow-API.pdf)
+- `POST /api/apaczka/order-valuation`: Wycena zamówienia
+- `POST /api/apaczka/order-send`: Wysłanie nowego zamówienia
 
-## Available Methods
+### SDK dla Apaczka API
 
-The SDK provides the following methods:
+SDK dostarcza następujące metody:
 
-- `order(id: string)`: Get details of a specific order
-- `orders(page?: number, limit?: number)`: List orders
-- `waybill(id: string)`: Get waybill for an order
-- `pickupHours(postalCode: string, serviceId?: string)`: Get available pickup hours
-- `orderValuation(order: OrderRequest)`: Get order valuation
-- `orderSend(order: OrderRequest)`: Send a new order
-- `cancelOrder(id: string)`: Cancel an order
-- `serviceStructure()`: Get service structure
-- `points(type?: string)`: Get pickup/delivery points
-- `customerRegister(customer: Record<string, unknown>)`: Register a new customer
-- `turnIn(orderIds: string[])`: Turn in orders
+- `order(id: string)`: Pobierz szczegóły konkretnego zamówienia
+- `orders(page?: number, limit?: number)`: Lista zamówień
+- `waybill(id: string)`: Pobierz list przewozowy dla zamówienia
+- `pickupHours(postalCode: string, serviceId?: string)`: Pobierz dostępne godziny odbioru
+- `orderValuation(order: OrderRequest)`: Wycena zamówienia
+- `orderSend(order: OrderRequest)`: Wyślij nowe zamówienie
+- `cancelOrder(id: string)`: Anuluj zamówienie
+- `serviceStructure()`: Pobierz strukturę usług
+- `points(type?: string)`: Pobierz punkty odbioru/dostawy
+- `customerRegister(customer: Record<string, unknown>)`: Zarejestruj nowego klienta
+- `turnIn(orderIds: string[])`: Zgłoś zamówienia do odbioru
 
-## API Endpoints
+## Skrypt dla przeglądarki
 
-The following endpoints are available in the Express server:
+Skrypt frontendowy (`scriptForApaczka.js`) jest zaprojektowany do instalacji poprzez rozszerzenie Tampermonkey lub podobne. Skrypt działa na stronie edycji zamówienia w panelu administracyjnym sklepu.
 
-- `POST /api/apaczka/order-valuation`: Get order valuation
-- `POST /api/apaczka/order-send`: Send a new order
+### Funkcje skryptu:
 
-## Frontend Script
+1. **Automatyczne pobieranie danych** - Skrypt analizuje DOM strony zamówienia, aby pobrać dane klienta (np. imię, nazwisko, adres, email, telefon)
+2. **Interfejs użytkownika** - Dodaje formularz do strony zamówienia, wypełniony automatycznie pobranymi danymi
+3. **Wycena przesyłki** - Umożliwia wycenę przesyłki przed jej nadaniem
+4. **Wysyłanie zamówienia** - Przesyła dane do serwera, który komunikuje się z API Apaczka
 
-A (Greasy script)[https://greasyfork.org/pl] is included to facilitate the interaction between the frontend and the backend. This script is designed to be used on the `sote CMS backend` website and provides a form for users to input shipping details directly on the order edit page. Once the form is filled out, the script sends the data to the backend API to create a shipping order.
+### Ważne ograniczenia:
 
-- **Script Name**: `greasyScriptForApaczka`
-- **Purpose**: To send shipping data from the frontend (sote CMS backend) to the backend (this app) for order processing.
-- **Integration**: The script interacts with the backend by sending a POST request to the `/api/apaczka` endpoint with the shipping details.
+- **Limit znaków dla DPD** - API DPD (service_id: 21) ma ścisły limit 49 znaków dla zawartości przesyłki. Pole "Zawartość przesyłki" w formularzu wyświetla licznik znaków, ograniczając długość tekstu do 49 znaków, aby zapobiec błędom API.
 
-## Development
+### Integracja:
 
-To set up the project for development:
+Skrypt komunikuje się z backendem poprzez wysyłanie żądania POST do endpointu `/api/apaczka/order-send` z danymi przesyłki.
 
-1. Clone the repository
-2. Install dependencies: `pnpm i`
-3. Build the project: `pnpm build`
-4. Run the project: `pnpm start`
+## Dokumentacja API i wytyczne:
 
-## Contributing
+- [Dokumentacja API](https://panel.apaczka.pl/dokumentacja_api_v2.php)
+- [Wytyczne dla klientów API](https://www.apaczka.pl/app/uploads/2022/12/Zalecenia-dla-klientow-API.pdf)
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## Uruchomienie projektu
 
-## License
+Aby skonfigurować projekt do rozwoju:
 
-This project is licensed under the ISC License.
+1. Sklonuj repozytorium
+2. Zainstaluj zależności: `npm install`
+3. Zbuduj projekt: `npm run build`
+4. Uruchom projekt: `npm start`
 
-## Author
+## Instalacja skryptu dla przeglądarki
 
-[Rafał Majewski | skladmuzyczny.pl](https://skladmuzyczny.pl)
+1. Zainstaluj rozszerzenie Tampermonkey w przeglądarce
+2. Utwórz nowy skrypt i skopiuj zawartość pliku `frontScript/scriptForApaczka.js`
+3. Zapisz skrypt i aktywuj go
+4. Przejdź do panelu administracyjnego sklepu, na stronę edycji zamówienia
+
+## Autor
+
+Rafał Majewski
