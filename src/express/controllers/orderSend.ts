@@ -12,8 +12,9 @@ const sdk = createApaczkaSDK(APP_ID, APP_SECRET);
 export const orderSend = async (req: Request, res: Response) => {
   try {
     const orderRequest: OrderRequest = req.body as OrderRequest;
+
+    // Przycinanie pola content odbywa się teraz w SDK
     const orderResponse = await sdk.orderSend(orderRequest);
-    console.dir(orderResponse, { depth: null });
     res.json(orderResponse);
     return;
   } catch (error) {

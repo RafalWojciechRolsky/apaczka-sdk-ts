@@ -22,9 +22,10 @@ export const orderValuation = async (req: Request, res: Response) => {
     // Usuwamy service_id, ponieważ przy wycenie nie jest potrzebne
     delete orderRequest.service_id;
 
+    // Przycinanie pola content odbywa się teraz w SDK
+
     // Wywołujemy API Apaczka do wyceny
     const valuation = await sdk.orderValuation(orderRequest);
-    console.dir(valuation, { depth: null });
     // Zwracamy pełną odpowiedź z API
     res.json(valuation);
   } catch (error) {
