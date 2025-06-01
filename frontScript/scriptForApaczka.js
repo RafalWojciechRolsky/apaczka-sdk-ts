@@ -75,7 +75,7 @@
     const div = document.createElement("div");
     div.style.marginBottom = "15px";
     div.style.display = "flex";
-    div.style.alignItems = "center";
+    div.style.alignItems = "flex-start"; // Zmienione na flex-start dla lepszego wyrównania textarea
 
     const labelElement = document.createElement("label");
     labelElement.textContent = `${label}: `;
@@ -84,36 +84,49 @@
     labelElement.style.marginRight = "10px";
     labelElement.style.fontWeight = "500";
     labelElement.style.color = "#444";
+    labelElement.style.paddingTop = "8px"; // Dodane wyrównanie w pionie dla etykiety
 
-    const input = document.createElement("input");
-    input.type = type;
-    input.id = name;
-    input.name = name;
-    input.value = value;
-    input.style.flexGrow = "1";
-    input.style.padding = "8px 12px";
-    input.style.border = "1px solid #ced4da";
-    input.style.borderRadius = "4px";
-    input.style.transition =
+    let inputElement;
+    if (type === "textarea") {
+      inputElement = document.createElement("textarea");
+      inputElement.style.minHeight = "60px"; // Większa wysokość dla textarea
+      inputElement.value = value; // Używaj value zamiast textContent dla spójności
+      inputElement.style.resize = "vertical";
+      inputElement.style.margin = "0"; // Usunięcie wszystkich domyślnych marginesów
+      inputElement.style.fontFamily = "inherit"; // Użyj tej samej czcionki co inputy
+    } else {
+      inputElement = document.createElement("input");
+      inputElement.type = type;
+      inputElement.value = value;
+    }
+
+    inputElement.id = name;
+    inputElement.name = name;
+    inputElement.style.flexGrow = "1";
+    inputElement.style.padding = "8px 12px";
+    inputElement.style.border = "1px solid #ced4da";
+    inputElement.style.borderRadius = "4px";
+    inputElement.style.transition =
       "border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out";
-    input.style.fontSize = "14px";
-    input.style.boxSizing = "border-box";
-    input.style.width = "100%";
+    inputElement.style.fontSize = "14px";
+    inputElement.style.boxSizing = "border-box";
+    inputElement.style.width = "100%";
+    inputElement.style.display = "block"; // Upewniamy się, że jest blokiem
 
     // Dodajemy stany hover i focus
-    input.addEventListener("focus", () => {
-      input.style.outline = "none";
-      input.style.borderColor = "#80bdff";
-      input.style.boxShadow = "0 0 0 3px rgba(0,123,255,0.25)";
+    inputElement.addEventListener("focus", () => {
+      inputElement.style.outline = "none";
+      inputElement.style.borderColor = "#80bdff";
+      inputElement.style.boxShadow = "0 0 0 3px rgba(0,123,255,0.25)";
     });
 
-    input.addEventListener("blur", () => {
-      input.style.boxShadow = "none";
-      input.style.borderColor = "#ced4da";
+    inputElement.addEventListener("blur", () => {
+      inputElement.style.boxShadow = "none";
+      inputElement.style.borderColor = "#ced4da";
     });
 
     div.appendChild(labelElement);
-    div.appendChild(input);
+    div.appendChild(inputElement);
 
     return div;
   }
@@ -478,17 +491,59 @@
   );
 
   // Dodajemy pole na zawartość przesyłki z limitem 50 znaków - dodajemy do prawej kolumny
-  const contentField = createFormField(
-    "Zawartość przesyłki",
-    "text",
-    "content",
-    defaultContent.substring(0, 50)
-  );
-  addFieldToColumn(rightColumn, contentField);
+  // Tworzymy pole zawartości przesyłki jako zwykły div (tak samo jak inne pola)
+  const contentField = document.createElement("div");
+  contentField.style.marginBottom = "15px";
+  contentField.style.display = "flex";
+  contentField.style.alignItems = "center"; // Właściwe wyrównanie dla spójności z innymi polami
 
-  // Ustawiamy limit znaków dla pola content
-  const contentInput = form.querySelector("input[name='content']");
+  // Etykieta
+  const contentLabel = document.createElement("label");
+  contentLabel.textContent = "Zawartość przesyłki: ";
+  contentLabel.setAttribute("for", "content");
+  contentLabel.style.flexBasis = "40%";
+  contentLabel.style.marginRight = "10px";
+  contentLabel.style.fontWeight = "500";
+  contentLabel.style.color = "#444";
+
+  // Textarea
+  const contentInput = document.createElement("textarea");
+  contentInput.id = "content";
+  contentInput.name = "content";
   contentInput.maxLength = 50;
+  contentInput.value = defaultContent.substring(0, 49); // Limitem jest 49 znaków dla DPD
+  contentInput.style.flexGrow = "1";
+  contentInput.style.padding = "8px 12px";
+  contentInput.style.border = "1px solid #ced4da";
+  contentInput.style.borderRadius = "4px";
+  contentInput.style.transition =
+    "border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out";
+  contentInput.style.fontSize = "14px";
+  contentInput.style.boxSizing = "border-box";
+  contentInput.style.width = "100%";
+  contentInput.style.minHeight = "60px";
+  contentInput.style.resize = "vertical";
+  contentInput.style.fontFamily = "inherit";
+  contentInput.style.margin = "0";
+
+  // Dodajemy stany hover i focus
+  contentInput.addEventListener("focus", () => {
+    contentInput.style.outline = "none";
+    contentInput.style.borderColor = "#80bdff";
+    contentInput.style.boxShadow = "0 0 0 3px rgba(0,123,255,0.25)";
+  });
+
+  contentInput.addEventListener("blur", () => {
+    contentInput.style.boxShadow = "none";
+    contentInput.style.borderColor = "#ced4da";
+  });
+
+  // Budujemy strukturę DOM
+  contentField.appendChild(contentLabel);
+  contentField.appendChild(contentInput);
+
+  // Dodajemy do prawej kolumny
+  addFieldToColumn(rightColumn, contentField);
 
   // Ukryte pole na service_id (wypełnione po wycenie)
   const serviceIdInput = document.createElement("input");
